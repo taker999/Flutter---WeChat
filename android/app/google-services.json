@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "951067472722",
+    "project_id": "we-chat-75459",
+    "storage_bucket": "we-chat-75459.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:951067472722:android:6ef7d47a240f2ed9e2808b",
+        "android_client_info": {
+          "package_name": "com.example.flutter_we_chat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "951067472722-lde0iv3j3qbq1s2hta8msptjdpuuhmpd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.flutter_we_chat",
+            "certificate_hash": "01f660f1cb39c433e51b1d9140fcdf1edc5d37f0"
+          }
+        },
+        {
+          "client_id": "951067472722-goom3j0sfe0mlmijro022m0s5hnfl6qa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtQx7NZWTB-8BiLr5NaYUQOPLbahev9t8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "951067472722-goom3j0sfe0mlmijro022m0s5hnfl6qa.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "951067472722-g95tltuqffsl779rlj3lsp0u9u6240or.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flutterWeChat"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
