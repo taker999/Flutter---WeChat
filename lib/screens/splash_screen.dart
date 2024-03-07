@@ -18,8 +18,8 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     Future.delayed(const Duration(seconds: 2), () {
-      //exit full-screen
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      // //exit full-screen
+      // SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       SystemChrome.setSystemUIOverlayStyle(
         const SystemUiOverlayStyle(
           systemNavigationBarColor: Colors.white,
@@ -63,11 +63,12 @@ class _SplashScreenState extends State<SplashScreen> {
             bottom: mq.height * .15,
             width: mq.width,
             child: const Text(
-              'MADE IN INDIA WITH ❤️',
+              'WeChat',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 25,
+                color: Colors.blue,
                 letterSpacing: .5,
               ),
             ),

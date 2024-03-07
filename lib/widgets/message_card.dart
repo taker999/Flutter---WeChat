@@ -1,10 +1,8 @@
 import 'dart:developer';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_we_chat/api/apis.dart';
 import 'package:flutter_we_chat/helper/dialogs.dart';
 import 'package:flutter_we_chat/helper/my_date_util.dart';
@@ -379,6 +377,8 @@ class _MessageCardState extends State<MessageCard> {
                 maxLines: null,
                 onChanged: (value) => updatedMsg = value,
                 decoration: InputDecoration(
+                  hintText: 'Write something...',
+                  hintStyle: const TextStyle(color: Colors.blue),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
                   ),
@@ -405,10 +405,12 @@ class _MessageCardState extends State<MessageCard> {
                 // update button
                 MaterialButton(
                   onPressed: () {
-                    // hide alert dialog
-                    Navigator.pop(context);
+                    if(updatedMsg.trim().isNotEmpty) {
+                      // hide alert dialog
+                      Navigator.pop(context);
 
-                    APIs.updateMessage(widget.message, updatedMsg);
+                      APIs.updateMessage(widget.message, updatedMsg);
+                    }
                   },
                   child: const Text(
                     'Update',
