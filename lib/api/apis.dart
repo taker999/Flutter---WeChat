@@ -9,6 +9,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_we_chat/models/chat_user.dart';
 import 'package:flutter_we_chat/models/message.dart';
+import 'package:flutter_we_chat/private/api_keys.dart';
 import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
 
@@ -348,7 +349,7 @@ class APIs {
       Uri.parse(
           "https://api-inference.huggingface.co/models/Artples/LAI-ImageGeneration-vSDXL-2"),
       headers: {
-        "Authorization": "Bearer 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",
+        "Authorization": "Bearer ${APIKeys.IMAGE_KEY}",
         "Content-Type": "application/json",
       },
       body: jsonEncode(data),
