@@ -360,6 +360,16 @@ class _ChatScreenState extends State<ChatScreen> {
                   var response = await APIs.imageQuery({"inputs": imageQuery})
                       .catchError((error) {
                     log('Error: $error');
+                    if (_list.isEmpty) {
+                      // on first message (add user to my_user collection of chat user)
+                      APIs.sendFirstMessage(
+                          widget.user, "Sorry, can't generate image", Type.text);
+                    } else {
+                      // simply send message
+                      APIs.sendMessage(
+                          widget.user, "Sorry, can't generate image", Type.text);
+                    }
+                    setState(() => _isUploading = false);
                   });
                   // log(File.fromRawPath(response).toString());
                   Uint8List imageInUnit8List =
