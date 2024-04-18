@@ -52,6 +52,9 @@ dependencies:
 #  for picking images
   image_picker: ^1.0.7
 
+#  for full screen image
+  insta_image_viewer: ^1.0.4
+
 #  for accessing Firebase Storage (for uploading files)
   firebase_storage: ^11.6.7
 
@@ -69,6 +72,9 @@ dependencies:
 
 #  for storing images into gallery
   gallery_saver_updated: ^3.0.0
+
+#  for creating temporary path to store ai images
+  path_provider: ^2.1.3
 
 dev_dependencies:
   flutter_test:

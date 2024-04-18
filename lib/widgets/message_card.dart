@@ -9,6 +9,7 @@ import 'package:flutter_we_chat/helper/my_date_util.dart';
 import 'package:flutter_we_chat/main.dart';
 import 'package:flutter_we_chat/models/message.dart';
 import 'package:gallery_saver_updated/gallery_saver.dart';
+import 'package:insta_image_viewer/insta_image_viewer.dart';
 
 class MessageCard extends StatefulWidget {
   const MessageCard({super.key, required this.message});
@@ -65,29 +66,31 @@ class _MessageCardState extends State<MessageCard> {
                 // show text
                 Text(
                     widget.message.msg,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
-                      color: Colors.black87,
+                      color: widget.message.msg.contains('/imagine', 0) ? Colors.blue : Colors.black87,
                     ),
                   )
                 :
                 // show image
-                ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: CachedNetworkImage(
-                      imageUrl: widget.message.msg,
-                      placeholder: (context, url) => const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
+                InstaImageViewer(
+                  child: ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: CachedNetworkImage(
+                        imageUrl: widget.message.msg,
+                        placeholder: (context, url) => const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => const Icon(
+                          Icons.image,
+                          size: 70,
                         ),
                       ),
-                      errorWidget: (context, url, error) => const Icon(
-                        Icons.image,
-                        size: 70,
-                      ),
                     ),
-                  ),
+                ),
           ),
         ),
 
@@ -164,29 +167,31 @@ class _MessageCardState extends State<MessageCard> {
                 // show text
                 Text(
                     widget.message.msg,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
-                      color: Colors.black87,
+                      color: widget.message.msg.contains('/imagine', 0) ? Colors.blue : Colors.black87,
                     ),
                   )
                 :
                 // show image
-                ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: CachedNetworkImage(
-                      imageUrl: widget.message.msg,
-                      placeholder: (context, url) => const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
+                InstaImageViewer(
+                  child: ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: CachedNetworkImage(
+                        imageUrl: widget.message.msg,
+                        placeholder: (context, url) => const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => const Icon(
+                          Icons.image,
+                          size: 70,
                         ),
                       ),
-                      errorWidget: (context, url, error) => const Icon(
-                        Icons.image,
-                        size: 70,
-                      ),
                     ),
-                  ),
+                ),
           ),
         ),
       ],

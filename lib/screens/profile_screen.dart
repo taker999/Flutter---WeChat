@@ -11,6 +11,7 @@ import 'package:flutter_we_chat/models/chat_user.dart';
 import 'package:flutter_we_chat/screens/auth/login_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:insta_image_viewer/insta_image_viewer.dart';
 
 // profile screen -- to show signed in user info
 class ProfileScreen extends StatefulWidget {
@@ -86,31 +87,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _image != null
                           ?
                           // local image
-                          ClipRRect(
-                              borderRadius:
-                                  BorderRadius.circular(mq.height * .1),
-                              child: Image.file(
-                                File(_image!),
-                                width: mq.height * .2,
-                                height: mq.height * .2,
-                                fit: BoxFit.cover,
+                          InstaImageViewer(
+                              child: ClipRRect(
+                                borderRadius:
+                                    BorderRadius.circular(mq.height * .1),
+                                child: Image.file(
+                                  File(_image!),
+                                  width: mq.height * .2,
+                                  height: mq.height * .2,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             )
                           :
                           // image from server
-                          ClipRRect(
-                              borderRadius:
-                                  BorderRadius.circular(mq.height * .1),
-                              child: CachedNetworkImage(
-                                width: mq.height * .2,
-                                height: mq.height * .2,
-                                fit: BoxFit.cover,
-                                imageUrl: widget.user.image,
-                                placeholder: (context, url) =>
-                                    const CircularProgressIndicator(),
-                                errorWidget: (context, url, error) =>
-                                    const CircleAvatar(
-                                        child: Icon(CupertinoIcons.person)),
+                          InstaImageViewer(
+                              child: ClipRRect(
+                                borderRadius:
+                                    BorderRadius.circular(mq.height * .1),
+                                child: CachedNetworkImage(
+                                  width: mq.height * .2,
+                                  height: mq.height * .2,
+                                  fit: BoxFit.cover,
+                                  imageUrl: widget.user.image,
+                                  placeholder: (context, url) =>
+                                      const CircularProgressIndicator(),
+                                  errorWidget: (context, url, error) =>
+                                      const CircleAvatar(
+                                          child: Icon(CupertinoIcons.person)),
+                                ),
                               ),
                             ),
 
@@ -270,10 +275,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onPressed: () async {
                         final ImagePicker picker = ImagePicker();
                         // Pick an image.
-                        final XFile? image =
-                            await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+                        final XFile? image = await picker.pickImage(
+                            source: ImageSource.gallery, imageQuality: 80);
                         if (image != null) {
-
                           // for hiding bottom sheet
                           setState(() {
                             _image = image.path;
@@ -294,7 +298,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onPressed: () async {
                         final ImagePicker picker = ImagePicker();
                         // Capture a photo.
-                        final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+                        final XFile? image = await picker.pickImage(
+                            source: ImageSource.camera, imageQuality: 70);
                         if (image != null) {
                           // for hiding bottom sheet
                           setState(() {

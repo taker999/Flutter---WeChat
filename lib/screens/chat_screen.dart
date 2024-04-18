@@ -1,4 +1,6 @@
+import 'dart:developer';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
@@ -12,6 +14,7 @@ import 'package:flutter_we_chat/models/message.dart';
 import 'package:flutter_we_chat/screens/view_profile_screen.dart';
 import 'package:flutter_we_chat/widgets/message_card.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key, required this.user});
@@ -31,7 +34,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // showEmoji -- for storing value of showing or hiding emoji
   // isUploading -- for checking if image is uploading or not
-  bool _showEmoji = false, _isUploading = false;
+  bool _showEmoji = false, _isUploading = false, _isImagine = false;
 
   @override
   Widget build(BuildContext context) {
@@ -109,8 +112,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 const Align(
                   alignment: Alignment.centerRight,
                   child: Padding(
-                    padding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                     ),
@@ -143,7 +145,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _appBar() {
     return InkWell(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => ViewProfileScreen(user: widget.user)));
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => ViewProfileScreen(user: widget.user)));
       },
       child: StreamBuilder(
         stream: APIs.getUserInfo(widget.user),
@@ -255,9 +260,27 @@ class _ChatScreenState extends State<ChatScreen> {
                       onTap: () {
                         if (_showEmoji) setState(() => _showEmoji = false);
                       },
+                      onChanged: (val) {
+                        if (val.contains('/imagine', 0)) {
+                          if (!_isImagine) {
+                            setState(() {
+                              _isImagine = true;
+                            });
+                          }
+                        } else {
+                          if (_isImagine) {
+                            setState(() {
+                              _isImagine = false;
+                            });
+                          }
+                        }
+                      },
                       controller: _textController,
                       keyboardType: TextInputType.multiline,
                       maxLines: null,
+                      style: _isImagine
+                          ? const TextStyle(color: Colors.blue)
+                          : null,
                       decoration: const InputDecoration(
                         hintText: 'Type Something...',
                         hintStyle: TextStyle(color: Colors.blueAccent),
@@ -318,14 +341,35 @@ class _ChatScreenState extends State<ChatScreen> {
 
           // send message button
           MaterialButton(
-            onPressed: () {
+            onPressed: () async {
+              if (_list.isEmpty) {
+                // on first message (add user to my_user collection of chat user)
+                APIs.sendFirstMessage(
+                    widget.user, _textController.text, Type.text);
+              } else {
+                // simply send message
+                APIs.sendMessage(
+                    widget.user, _textController.text, Type.text);
+              }
               if (_textController.text.trim().isNotEmpty) {
-                if(_list.isEmpty) {
-                  // on first message (add user to my_user collection of chat user)
-                  APIs.sendFirstMessage(widget.user, _textController.text, Type.text);
-                } else {
-                  // simply send message
-                  APIs.sendMessage(widget.user, _textController.text, Type.text);
+                if (_textController.text.contains('/imagine', 0)) {
+                  String imageQuery =
+                      _textController.text.replaceRange(0, 8, '').trim();
+                  _textController.clear();
+                  setState(() => _isUploading = true);
+                  var response = await APIs.imageQuery({"inputs": imageQuery})
+                      .catchError((error) {
+                    log('Error: $error');
+                  });
+                  // log(File.fromRawPath(response).toString());
+                  Uint8List imageInUnit8List =
+                      response; // store unit8List image here ;
+                  final tempDir = await getTemporaryDirectory();
+                  File file = await File('${tempDir.path}/image.jpg').create();
+                  file.writeAsBytesSync(imageInUnit8List);
+                  // log(file.toString());
+                  await APIs.sendChatImage(widget.user, file);
+                  setState(() => _isUploading = false);
                 }
                 _textController.clear();
               }

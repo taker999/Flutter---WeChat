@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_we_chat/helper/my_date_util.dart';
 import 'package:flutter_we_chat/main.dart';
 import 'package:flutter_we_chat/models/chat_user.dart';
+import 'package:insta_image_viewer/insta_image_viewer.dart';
 
 // view profile screen -- to view profile of user
 class ViewProfileScreen extends StatefulWidget {
@@ -56,17 +57,19 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                 SizedBox(width: mq.width, height: mq.height * .03),
 
                 // user profile pic
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(mq.height * .1),
-                  child: CachedNetworkImage(
-                    width: mq.height * .2,
-                    height: mq.height * .2,
-                    fit: BoxFit.cover,
-                    imageUrl: widget.user.image,
-                    placeholder: (context, url) =>
-                        const CircularProgressIndicator(),
-                    errorWidget: (context, url, error) =>
-                        const CircleAvatar(child: Icon(CupertinoIcons.person)),
+                InstaImageViewer(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(mq.height * .1),
+                    child: CachedNetworkImage(
+                      width: mq.height * .2,
+                      height: mq.height * .2,
+                      fit: BoxFit.cover,
+                      imageUrl: widget.user.image,
+                      placeholder: (context, url) =>
+                          const CircularProgressIndicator(),
+                      errorWidget: (context, url, error) =>
+                          const CircleAvatar(child: Icon(CupertinoIcons.person)),
+                    ),
                   ),
                 ),
 

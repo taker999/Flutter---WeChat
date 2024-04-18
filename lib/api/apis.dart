@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,6 +10,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_we_chat/models/chat_user.dart';
 import 'package:flutter_we_chat/models/message.dart';
 import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
 
 class APIs {
   // for authentication
@@ -58,7 +60,7 @@ class APIs {
       final body = {
         'to': chatUser.pushToken,
         'notification': {
-          'title': chatUser.name,
+          'title': me.name,
           'body': msg,
           'android_channel_id': 'chats',
         },
@@ -338,5 +340,24 @@ class APIs {
         .collection('chats/${getConversationId(message.toId)}/messages/')
         .doc(message.sent)
         .update({'msg': updatedMsg});
+  }
+
+/// ************ AI Image Generation APIs *************
+  static Future<Uint8List> imageQuery(Map<String, dynamic> data) async {
+    final response = await http.post(
+      Uri.parse(
+          "https://api-inference.huggingface.co/models/Artples/LAI-ImageGeneration-vSDXL-2"),
+      headers: {
+        "Authorization": "Bearer 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",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 200) {
+      return response.bodyBytes;
+    } else {
+      throw Exception('Failed to query model: ${response.statusCode}');
+    }
   }
 }
