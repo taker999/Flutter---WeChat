@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:flutter_we_chat/api/apis.dart';
 import 'package:flutter_we_chat/helper/my_date_util.dart';
 import 'package:flutter_we_chat/main.dart';
@@ -15,6 +17,7 @@ import 'package:flutter_we_chat/screens/view_profile_screen.dart';
 import 'package:flutter_we_chat/widgets/message_card.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:swipe_to/swipe_to.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key, required this.user});
@@ -36,10 +39,82 @@ class _ChatScreenState extends State<ChatScreen> {
   // isUploading -- for checking if image is uploading or not
   bool _showEmoji = false, _isUploading = false, _isImagine = false;
 
+  // for replying to a message
+  Message? _replyMessage;
+
+  late FocusNode _focusNode;
+
+  late StreamSubscription<bool> keyboardSubscription;
+
+  String _dropDownValue = '3';
+
+  @override
+  void initState() {
+    super.initState();
+    var keyboardVisibilityController = KeyboardVisibilityController();
+    _focusNode = FocusNode();
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        APIs.updateTypingStatus(widget.user, true);
+      } else {
+        APIs.updateTypingStatus(widget.user, false);
+      }
+    });
+
+    // for updating user typing status according to lifecycle events
+    // resume -- active or online
+    // pause -- inactive or offline
+    SystemChannels.lifecycle.setMessageHandler((message) {
+      if (APIs.auth.currentUser != null) {
+        if (message.toString().contains('resume')) {
+          APIs.updateActiveStatus(true);
+          if (keyboardVisibilityController.isVisible) {
+            APIs.updateTypingStatus(widget.user, true);
+          }
+        } else if (message.toString().contains('inactive')) {
+          APIs.updateActiveStatus(false);
+          APIs.updateTypingStatus(widget.user, false);
+        } else if (message.toString().contains('pause')) {
+          APIs.updateActiveStatus(false);
+          APIs.updateTypingStatus(widget.user, false);
+        } else if (message.toString().contains('detached')) {
+          APIs.updateActiveStatus(false);
+          APIs.updateTypingStatus(widget.user, false);
+        }
+      }
+
+      return Future.value(message);
+    });
+    // Query
+    // print('Keyboard visibility direct query: ${keyboardVisibilityController.isVisible}');
+    // if(keyboardVisibilityController.isVisible) {
+    //   _focusNode.unfocus();
+    // }
+
+    // Subscribe
+    keyboardSubscription =
+        keyboardVisibilityController.onChange.listen((bool visible) {
+      if (!visible) {
+        _focusNode.unfocus();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _focusNode.dispose();
+    keyboardSubscription.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        _focusNode.unfocus();
+      },
       child: PopScope(
         // if emojis are shown & back button is pressed then hide emojis
         // or else simply close current screen on back button click
@@ -90,7 +165,18 @@ class _ChatScreenState extends State<ChatScreen> {
                             physics: const BouncingScrollPhysics(),
                             itemCount: _list.length,
                             itemBuilder: (context, index) {
-                              return MessageCard(message: _list[index]);
+                              return SwipeTo(
+                                onRightSwipe: (d) {
+                                  setState(() {
+                                    _replyMessage = _list[index];
+                                  });
+                                  _focusNode.requestFocus();
+                                },
+                                child: MessageCard(
+                                  message: _list[index],
+                                  userName: widget.user.name,
+                                ),
+                              );
                             },
                           );
                         } else {
@@ -159,7 +245,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
           return Row(
             children: [
-              // back button
               IconButton(
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(
@@ -204,21 +289,66 @@ class _ChatScreenState extends State<ChatScreen> {
                   const SizedBox(height: 2),
 
                   // last seen time of user
-                  Text(
-                    list.isNotEmpty
-                        ? list[0].isOnline
-                            ? 'Online'
-                            : MyDateUtil.getLastActiveTime(
-                                context: context,
-                                lastActive: list[0].lastActive)
-                        : MyDateUtil.getLastActiveTime(
-                            context: context,
-                            lastActive: widget.user.lastActive),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
-                  )
+                  StreamBuilder(
+                      stream: APIs.getTypingStatus(widget.user),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Text(
+                            list.isNotEmpty
+                                ? list[0].isOnline
+                                    ? 'Online'
+                                    : MyDateUtil.getLastActiveTime(
+                                        context: context,
+                                        lastActive: list[0].lastActive)
+                                : MyDateUtil.getLastActiveTime(
+                                    context: context,
+                                    lastActive: widget.user.lastActive),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.black54,
+                            ),
+                          );
+                        } else {
+                          if (snapshot.hasError) {
+                            return Text(
+                              list.isNotEmpty
+                                  ? list[0].isOnline
+                                      ? 'Online'
+                                      : MyDateUtil.getLastActiveTime(
+                                          context: context,
+                                          lastActive: list[0].lastActive)
+                                  : MyDateUtil.getLastActiveTime(
+                                      context: context,
+                                      lastActive: widget.user.lastActive),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.black54,
+                              ),
+                            );
+                          } else {
+                            log(snapshot.data!['is_typing_${widget.user.id}']
+                                .toString());
+                            return Text(
+                              snapshot.data!['is_typing_${widget.user.id}']
+                                  ? 'Typing...'
+                                  : list.isNotEmpty
+                                      ? list[0].isOnline
+                                          ? 'Online'
+                                          : MyDateUtil.getLastActiveTime(
+                                              context: context,
+                                              lastActive: list[0].lastActive)
+                                      : MyDateUtil.getLastActiveTime(
+                                          context: context,
+                                          lastActive: widget.user.lastActive),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.black54,
+                              ),
+                            );
+                          }
+                        }
+                      }),
                 ],
               ),
             ],
@@ -234,140 +364,162 @@ class _ChatScreenState extends State<ChatScreen> {
       padding: EdgeInsets.symmetric(
           vertical: mq.height * .01, horizontal: mq.width * .025),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // input field & buttons
           Expanded(
-            child: Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)),
-              child: Row(
-                children: [
-                  // emoji button
-                  IconButton(
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      setState(() => _showEmoji = !_showEmoji);
-                    },
-                    icon: const Icon(
-                      Icons.emoji_emotions,
-                      color: Colors.blueAccent,
-                      size: 25,
-                    ),
-                  ),
-
-                  Expanded(
-                    child: TextField(
-                      onTap: () {
-                        if (_showEmoji) setState(() => _showEmoji = false);
-                      },
-                      onChanged: (val) {
-                        if (val.contains('/imagine', 0)) {
-                          if (!_isImagine) {
-                            setState(() {
-                              _isImagine = true;
-                            });
-                          }
-                        } else {
-                          if (_isImagine) {
-                            setState(() {
-                              _isImagine = false;
-                            });
-                          }
-                        }
-                      },
-                      controller: _textController,
-                      keyboardType: TextInputType.multiline,
-                      maxLines: null,
-                      style: _isImagine
-                          ? const TextStyle(color: Colors.blue)
-                          : null,
-                      decoration: const InputDecoration(
-                        hintText: 'Type Something...',
-                        hintStyle: TextStyle(color: Colors.blueAccent),
-                        border: InputBorder.none,
+            child: Column(
+              children: [
+                if (_replyMessage != null) _buildReplyMessage(),
+                Card(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)),
+                  child: Row(
+                    children: [
+                      // emoji button
+                      IconButton(
+                        onPressed: () {
+                          FocusScope.of(context).unfocus();
+                          setState(() => _showEmoji = !_showEmoji);
+                        },
+                        icon: const Icon(
+                          Icons.emoji_emotions,
+                          color: Colors.blueAccent,
+                          size: 25,
+                        ),
                       ),
-                    ),
+
+                      Expanded(
+                        child: TextField(
+                          onTap: () {
+                            if (_showEmoji) setState(() => _showEmoji = false);
+                          },
+                          focusNode: _focusNode,
+                          onChanged: (val) {
+                            if (val.contains('/imagine', 0)) {
+                              if (!_isImagine) {
+                                setState(() {
+                                  _isImagine = true;
+                                });
+                              }
+                            } else {
+                              if (_isImagine) {
+                                setState(() {
+                                  _isImagine = false;
+                                });
+                              }
+                            }
+                          },
+                          controller: _textController,
+                          keyboardType: TextInputType.multiline,
+                          maxLines: null,
+                          style: _isImagine
+                              ? const TextStyle(color: Colors.blue)
+                              : null,
+                          decoration: const InputDecoration(
+                            hintText: 'Type Something...',
+                            hintStyle: TextStyle(color: Colors.blueAccent),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+
+                      _isImagine
+                          ? _dropDown()
+                          : Row(
+                              children: [
+                                // pick image from gallery button
+                                IconButton(
+                                  onPressed: () async {
+                                    final ImagePicker picker = ImagePicker();
+
+                                    // picking multiple images
+                                    final List<XFile> images = await picker
+                                        .pickMultiImage(imageQuality: 80);
+
+                                    // uploading & sending image one by one
+                                    for (var i in images) {
+                                      setState(() => _isUploading = true);
+                                      await APIs.sendChatImage(
+                                          widget.user, File(i.path));
+                                      setState(() => _isUploading = false);
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    Icons.image,
+                                    color: Colors.blueAccent,
+                                    size: 26,
+                                  ),
+                                ),
+
+                                // take image from camera button
+                                IconButton(
+                                  onPressed: () async {
+                                    final ImagePicker picker = ImagePicker();
+                                    // Capture a photo.
+                                    final XFile? image = await picker.pickImage(
+                                        source: ImageSource.camera,
+                                        imageQuality: 80);
+                                    if (image != null) {
+                                      setState(() => _isUploading = true);
+                                      await APIs.sendChatImage(
+                                          widget.user, File(image.path));
+                                      setState(() => _isUploading = false);
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    Icons.camera_alt_rounded,
+                                    color: Colors.blueAccent,
+                                    size: 26,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                      // add some space
+                      SizedBox(width: mq.width * .02),
+                    ],
                   ),
-
-                  // pick image from gallery button
-                  IconButton(
-                    onPressed: () async {
-                      final ImagePicker picker = ImagePicker();
-
-                      // picking multiple images
-                      final List<XFile> images =
-                          await picker.pickMultiImage(imageQuality: 80);
-
-                      // uploading & sending image one by one
-                      for (var i in images) {
-                        setState(() => _isUploading = true);
-                        await APIs.sendChatImage(widget.user, File(i.path));
-                        setState(() => _isUploading = false);
-                      }
-                    },
-                    icon: const Icon(
-                      Icons.image,
-                      color: Colors.blueAccent,
-                      size: 26,
-                    ),
-                  ),
-
-                  // take image from camera button
-                  IconButton(
-                    onPressed: () async {
-                      final ImagePicker picker = ImagePicker();
-                      // Capture a photo.
-                      final XFile? image = await picker.pickImage(
-                          source: ImageSource.camera, imageQuality: 80);
-                      if (image != null) {
-                        setState(() => _isUploading = true);
-                        await APIs.sendChatImage(widget.user, File(image.path));
-                        setState(() => _isUploading = false);
-                      }
-                    },
-                    icon: const Icon(
-                      Icons.camera_alt_rounded,
-                      color: Colors.blueAccent,
-                      size: 26,
-                    ),
-                  ),
-
-                  // add some space
-                  SizedBox(width: mq.width * .02),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
 
           // send message button
           MaterialButton(
             onPressed: () async {
-              if (_list.isEmpty) {
-                // on first message (add user to my_user collection of chat user)
-                APIs.sendFirstMessage(
-                    widget.user, _textController.text, Type.text);
-              } else {
-                // simply send message
-                APIs.sendMessage(
-                    widget.user, _textController.text, Type.text);
+              if(_isImagine) {
+                _isImagine = false;
               }
               if (_textController.text.trim().isNotEmpty) {
+                if (_list.isEmpty) {
+                  // on first message (add user to my_user collection of chat user)
+                  APIs.sendFirstMessage(
+                      widget.user, _textController.text, Type.text);
+                } else {
+                  // simply send message
+                  APIs.sendMessage(widget.user, _textController.text, Type.text,
+                      _replyMessage);
+                }
                 if (_textController.text.contains('/imagine', 0)) {
                   String imageQuery =
                       _textController.text.replaceRange(0, 8, '').trim();
                   _textController.clear();
                   setState(() => _isUploading = true);
-                  var response = await APIs.imageQuery({"inputs": imageQuery})
+                  var response = await APIs.imageQuery({"inputs": imageQuery}, _dropDownValue)
                       .catchError((error) {
                     log('Error: $error');
                     if (_list.isEmpty) {
                       // on first message (add user to my_user collection of chat user)
-                      APIs.sendFirstMessage(
-                          widget.user, "Sorry, can't generate image", Type.text);
+                      APIs.sendFirstMessage(widget.user,
+                          "Sorry, can't generate image", Type.text);
                     } else {
                       // simply send message
                       APIs.sendMessage(
-                          widget.user, "Sorry, can't generate image", Type.text);
+                          widget.user,
+                          "Sorry, can't generate image",
+                          Type.text,
+                          _replyMessage);
                     }
                     setState(() => _isUploading = false);
                   });
@@ -382,6 +534,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   setState(() => _isUploading = false);
                 }
                 _textController.clear();
+                if (_replyMessage != null) {
+                  setState(() {
+                    _replyMessage = null;
+                  });
+                }
               }
             },
             minWidth: 0,
@@ -396,6 +553,185 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildReplyMessage() {
+    return _replyMessage!.type == Type.image
+        ? Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _replyMessage!.formId == APIs.me.id
+                            ? 'you'
+                            : widget.user.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: CachedNetworkImage(
+                          height: mq.height * .2,
+                          imageUrl: _replyMessage!.msg,
+                          placeholder: (context, url) => const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => const Icon(
+                            Icons.image,
+                            size: 70,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: SizedBox(
+                    height: 30,
+                    width: 30,
+                    child: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _replyMessage = null;
+                        });
+                      },
+                      icon: const Icon(
+                        Icons.close,
+                        size: 15,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        : Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Stack(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _replyMessage!.formId == APIs.me.id
+                                  ? 'you'
+                                  : widget.user.name,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              _replyMessage!.msg,
+                              maxLines: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: SizedBox(
+                    height: 30,
+                    width: 30,
+                    child: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _replyMessage = null;
+                        });
+                      },
+                      icon: const Icon(
+                        Icons.close,
+                        size: 15,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+  }
+
+  Widget _dropDown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.blue,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: DropdownButton<String>(
+        borderRadius: BorderRadius.circular(16),
+        padding: const EdgeInsets.all(8),
+        isDense: true,
+        dropdownColor: Colors.blue,
+        focusColor: Colors.blue,
+        value: _dropDownValue,
+        items: const [
+          DropdownMenuItem(
+            value: '1',
+            child: Text('StableDiffusionBase'),
+          ),
+          DropdownMenuItem(
+            value: '2',
+            child: Text('StableDiffusion-1'),
+          ),
+          DropdownMenuItem(
+            value: '3',
+            child: Text('StableDiffusion-2'),
+          ),
+          DropdownMenuItem(
+            value: '4',
+            child: Text('StableDiffusion-3'),
+          ),
+          DropdownMenuItem(
+            value: '5',
+            child: Text('AbsoluteReality'),
+          ),
+          DropdownMenuItem(
+            value: '6',
+            child: Text('Aesthetic'),
+          ),
+          DropdownMenuItem(
+            value: '7',
+            child: Text('StableDiffusionPipeline-1'),
+          ),
+          DropdownMenuItem(
+            value: '8',
+            child: Text('StableDiffusionPipeline-2'),
+          ),
+        ],
+        onChanged: (String? value) {
+          if (value is String) {
+            setState(() {
+              _dropDownValue = value;
+            });
+          }
+        },
       ),
     );
   }

@@ -12,9 +12,10 @@ import 'package:gallery_saver_updated/gallery_saver.dart';
 import 'package:insta_image_viewer/insta_image_viewer.dart';
 
 class MessageCard extends StatefulWidget {
-  const MessageCard({super.key, required this.message});
+  const MessageCard({super.key, required this.message, required this.userName});
 
   final Message message;
+  final String userName;
 
   @override
   State<MessageCard> createState() => _MessageCardState();
@@ -61,36 +62,124 @@ class _MessageCardState extends State<MessageCard> {
                 bottomRight: Radius.circular(30),
               ),
             ),
-            child: widget.message.type == Type.text
-                ?
-                // show text
-                Text(
-                    widget.message.msg,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: widget.message.msg.contains('/imagine', 0) ? Colors.blue : Colors.black87,
-                    ),
-                  )
-                :
-                // show image
-                InstaImageViewer(
-                  child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: CachedNetworkImage(
-                        imageUrl: widget.message.msg,
-                        placeholder: (context, url) => const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.message.replyMsg != null)
+                  widget.message.replyMsg!.type != Type.image
+                      ? Container(
+                          constraints: BoxConstraints(
+                            minWidth: mq.width * .25,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 171, 202, 216),
+                            shape: BoxShape.rectangle,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.message.replyMsg!.formId == APIs.me.id
+                                      ? 'You'
+                                      : widget.userName,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  widget.message.replyMsg!.msg,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : Container(
+                          height: mq.height * .25,
+                          constraints: BoxConstraints(
+                            minWidth: mq.width * .25,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 171, 202, 216),
+                            shape: BoxShape.rectangle,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.message.replyMsg!.formId == APIs.me.id
+                                      ? 'You'
+                                      : widget.userName,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(15),
+                                  child: CachedNetworkImage(
+                                    height: mq.height * .2,
+                                    imageUrl: widget.message.replyMsg!.msg,
+                                    placeholder: (context, url) =>
+                                        const Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        const Icon(
+                                      Icons.image,
+                                      size: 70,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        errorWidget: (context, url, error) => const Icon(
-                          Icons.image,
-                          size: 70,
+                widget.message.type == Type.text
+                    ?
+                    // show text
+                    Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(
+                          widget.message.msg,
+                          textAlign: TextAlign.start,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: widget.message.msg.contains('/imagine', 0)
+                                ? Colors.blue
+                                : Colors.black87,
+                          ),
+                        ),
+                      )
+                    :
+                    // show image
+                    InstaImageViewer(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: CachedNetworkImage(
+                            imageUrl: widget.message.msg,
+                            placeholder: (context, url) => const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => const Icon(
+                              Icons.image,
+                              size: 70,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                ),
+              ],
+            ),
           ),
         ),
 
@@ -162,36 +251,124 @@ class _MessageCardState extends State<MessageCard> {
                 bottomLeft: Radius.circular(30),
               ),
             ),
-            child: widget.message.type == Type.text
-                ?
-                // show text
-                Text(
-                    widget.message.msg,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: widget.message.msg.contains('/imagine', 0) ? Colors.blue : Colors.black87,
-                    ),
-                  )
-                :
-                // show image
-                InstaImageViewer(
-                  child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: CachedNetworkImage(
-                        imageUrl: widget.message.msg,
-                        placeholder: (context, url) => const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.message.replyMsg != null)
+                  widget.message.replyMsg!.type != Type.image
+                      ? Container(
+                          constraints: BoxConstraints(
+                            minWidth: mq.width * 0.25,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(176, 123, 253, 0),
+                            shape: BoxShape.rectangle,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.message.replyMsg!.formId == APIs.me.id
+                                      ? 'You'
+                                      : widget.userName,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  widget.message.replyMsg!.msg,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : Container(
+                          height: mq.height * .25,
+                          constraints: BoxConstraints(
+                            minWidth: mq.width * .25,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 171, 202, 216),
+                            shape: BoxShape.rectangle,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.message.replyMsg!.formId == APIs.me.id
+                                      ? 'You'
+                                      : widget.userName,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(15),
+                                  child: CachedNetworkImage(
+                                    height: mq.height * .2,
+                                    imageUrl: widget.message.replyMsg!.msg,
+                                    placeholder: (context, url) =>
+                                        const Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        const Icon(
+                                      Icons.image,
+                                      size: 70,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        errorWidget: (context, url, error) => const Icon(
-                          Icons.image,
-                          size: 70,
+                widget.message.type == Type.text
+                    ?
+                    // show text
+                    Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(
+                          widget.message.msg,
+                          textAlign: TextAlign.start,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: widget.message.msg.contains('/imagine', 0)
+                                ? Colors.blue
+                                : Colors.black87,
+                          ),
+                        ),
+                      )
+                    :
+                    // show image
+                    InstaImageViewer(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: CachedNetworkImage(
+                            imageUrl: widget.message.msg,
+                            placeholder: (context, url) => const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => const Icon(
+                              Icons.image,
+                              size: 70,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -410,7 +587,7 @@ class _MessageCardState extends State<MessageCard> {
                 // update button
                 MaterialButton(
                   onPressed: () {
-                    if(updatedMsg.trim().isNotEmpty) {
+                    if (updatedMsg.trim().isNotEmpty) {
                       // hide alert dialog
                       Navigator.pop(context);
 

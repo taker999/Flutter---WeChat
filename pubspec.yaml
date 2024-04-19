@@ -76,6 +76,12 @@ dependencies:
 #  for creating temporary path to store ai images
   path_provider: ^2.1.3
 
+#  for swipe to reply
+  swipe_to: ^1.0.6
+
+#  for knowing keyboard status
+  flutter_keyboard_visibility: ^6.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

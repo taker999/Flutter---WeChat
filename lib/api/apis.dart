@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_we_chat/models/chat_user.dart';
 import 'package:flutter_we_chat/models/message.dart';
 import 'package:flutter_we_chat/private/api_keys.dart';
@@ -182,7 +183,6 @@ class APIs {
   // for adding an user to my user when first message is sent
   static Future<void> sendFirstMessage(
       ChatUser chatUser, String msg, Type type) async {
-
     await firestore
         .collection('users')
         .doc(user.uid)
@@ -196,7 +196,7 @@ class APIs {
         .collection('my_users')
         .doc(user.uid)
         .set({}).then((value) {
-      sendMessage(chatUser, msg, type);
+      sendMessage(chatUser, msg, type, null);
     });
   }
 
@@ -264,9 +264,28 @@ class APIs {
         .snapshots();
   }
 
+  // update user typing status
+  static Future<void>? updateTypingStatus(ChatUser user, bool isTyping) {
+    final ref =
+        firestore.collection('chats/${getConversationId(user.id)}/others/');
+    ref
+        .doc('typing_status')
+        .set({'is_typing_${me.id}': isTyping}, SetOptions(merge: true));
+    return null;
+  }
+
+  // for getting all messages of a specific conversation from firestore database
+  static Stream<DocumentSnapshot<Map<String, dynamic>>> getTypingStatus(
+      ChatUser user) {
+    return firestore
+        .collection('chats/${getConversationId(user.id)}/others/')
+        .doc('typing_status')
+        .snapshots();
+  }
+
   // for sending message
   static Future<void> sendMessage(
-      ChatUser chatUser, String msg, Type type) async {
+      ChatUser chatUser, String msg, Type type, Message? replyMsg) async {
     // message sending time (also used as id)
     final time = DateTime.now().millisecondsSinceEpoch.toString();
 
@@ -274,6 +293,7 @@ class APIs {
     final Message message = Message(
       formId: user.uid,
       msg: msg,
+      replyMsg: replyMsg,
       toId: chatUser.id,
       read: '',
       type: type,
@@ -320,7 +340,7 @@ class APIs {
 
     // updating image in firestore database
     final imageUrl = await ref.getDownloadURL();
-    await sendMessage(chatUser, imageUrl, Type.image);
+    await sendMessage(chatUser, imageUrl, Type.image, null);
   }
 
   // delete message
@@ -343,13 +363,40 @@ class APIs {
         .update({'msg': updatedMsg});
   }
 
-/// ************ AI Image Generation APIs *************
-  static Future<Uint8List> imageQuery(Map<String, dynamic> data) async {
+  /// ************ AI Image Generation APIs *************
+  static Future<Uint8List> imageQuery(
+      Map<String, dynamic> data, String urlNo) async {
+    String url = '';
+    if (urlNo == '1') {
+      url =
+          "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0";
+    } else if (urlNo == '2') {
+      url =
+          "https://api-inference.huggingface.co/models/Artples/LAI-ImageGeneration-vSDXL-1";
+    } else if (urlNo == '3') {
+      url =
+          "https://api-inference.huggingface.co/models/Artples/LAI-ImageGeneration-vSDXL-2";
+    } else if (urlNo == '4') {
+      url =
+          "https://api-inference.huggingface.co/models/stablediffusionapi/explicit-freedom-nsfw-wai";
+    } else if (urlNo == '5') {
+      url =
+          "https://api-inference.huggingface.co/models/digiplay/AbsoluteReality_v1.8.1";
+    } else if (urlNo == '6') {
+      url =
+          "https://api-inference.huggingface.co/models/playgroundai/playground-v2-1024px-aesthetic";
+    } else if (urlNo == '7') {
+      url =
+          "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1";
+    } else if (urlNo == '8') {
+      url =
+          "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-base";
+    }
+    log(url);
     final response = await http.post(
-      Uri.parse(
-          "https://api-inference.huggingface.co/models/Artples/LAI-ImageGeneration-vSDXL-2"),
+      Uri.parse(url),
       headers: {
-        "Authorization": "Bearer ${APIKeys.IMAGE_KEY}",
+        "Authorization": "Bearer ${APIKeys.IMAGE_KEY_TEST}",
         "Content-Type": "application/json",
       },
       body: jsonEncode(data),
