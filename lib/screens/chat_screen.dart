@@ -488,23 +488,24 @@ class _ChatScreenState extends State<ChatScreen> {
           // send message button
           MaterialButton(
             onPressed: () async {
+              String textControllerText = _textController.text;
+              _textController.clear();
               if(_isImagine) {
                 _isImagine = false;
               }
-              if (_textController.text.trim().isNotEmpty) {
+              if (textControllerText.trim().isNotEmpty) {
                 if (_list.isEmpty) {
                   // on first message (add user to my_user collection of chat user)
                   APIs.sendFirstMessage(
-                      widget.user, _textController.text, Type.text);
+                      widget.user, textControllerText, Type.text);
                 } else {
                   // simply send message
-                  APIs.sendMessage(widget.user, _textController.text, Type.text,
+                  APIs.sendMessage(widget.user, textControllerText, Type.text,
                       _replyMessage);
                 }
-                if (_textController.text.contains('/imagine', 0)) {
+                if (textControllerText.contains('/imagine', 0)) {
                   String imageQuery =
-                      _textController.text.replaceRange(0, 8, '').trim();
-                  _textController.clear();
+                  textControllerText.replaceRange(0, 8, '').trim();
                   setState(() => _isUploading = true);
                   var response = await APIs.imageQuery({"inputs": imageQuery}, _dropDownValue)
                       .catchError((error) {
@@ -533,7 +534,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   await APIs.sendChatImage(widget.user, file);
                   setState(() => _isUploading = false);
                 }
-                _textController.clear();
                 if (_replyMessage != null) {
                   setState(() {
                     _replyMessage = null;
